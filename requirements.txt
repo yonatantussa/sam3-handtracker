@@ -1,0 +1,8 @@
+torch>=2.7.0
+torchvision
+torchaudio
+opencv-python>=4.5.0
+pillow>=9.0.0
+numpy>=1.21.0
+huggingface-hub
+samgeo
