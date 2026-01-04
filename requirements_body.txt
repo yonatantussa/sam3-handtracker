@@ -1,0 +1,9 @@
+torch>=2.7.0
+torchvision
+torchaudio
+opencv-python>=4.5.0
+pillow>=9.0.0
+numpy>=1.21.0
+huggingface-hub
+# SAM 3D Body will be installed separately from GitHub
+# Installation: git clone https://github.com/facebookresearch/sam-3d-body.git && cd sam-3d-body && pip install -e .
