@@ -3,13 +3,29 @@
 
 import os
 import sys
+import argparse
 import numpy as np
 import cv2
 from PIL import Image
 
-FRAMES_DIR = "../frames_preview"
-MASKS_DIR = "output/masks"
-OUTPUT_DIR = "output/visualizations"
+def parse_args():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(description='Visualize hand masks on frames')
+    parser.add_argument('--start-frame', type=int, default=0,
+                        help='Starting frame index (default: 0)')
+    parser.add_argument('--frames-dir', type=str, default='../frames_preview',
+                        help='Directory containing video frames (default: ../frames_preview)')
+    parser.add_argument('--masks-dir', type=str, default='output/masks',
+                        help='Directory containing masks (default: output/masks)')
+    parser.add_argument('--output-dir', type=str, default='output/visualizations',
+                        help='Output directory for visualizations (default: output/visualizations)')
+    return parser.parse_args()
+
+args = parse_args()
+
+FRAMES_DIR = args.frames_dir
+MASKS_DIR = args.masks_dir
+OUTPUT_DIR = args.output_dir
 
 # Check if output directory already has visualizations
 if os.path.exists(OUTPUT_DIR):
@@ -36,17 +52,26 @@ os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Get list of masks and frames
 mask_files = sorted([f for f in os.listdir(MASKS_DIR) if f.endswith('.png')])
-frame_files = sorted([f for f in os.listdir(FRAMES_DIR) if f.endswith('.jpg')])
+all_frame_files = sorted([f for f in os.listdir(FRAMES_DIR) if f.endswith('.jpg')])
+
+# Select frames starting from the specified index
+start_idx = args.start_frame
+frame_files = all_frame_files[start_idx:start_idx + len(mask_files)]
 
 print(f"\nVisualizing {len(mask_files)} masks...")
 print(f"  Masks: {len(mask_files)} files")
-print(f"  Frames: {len(frame_files)} files")
+print(f"  Frames: Using indices {start_idx} to {start_idx + len(mask_files) - 1}")
+print(f"  Total available frames: {len(all_frame_files)}")
 
-# Create colormap for hands
+if len(frame_files) < len(mask_files):
+    print(f"\nERROR: Not enough frames! Need {len(mask_files)}, but only {len(frame_files)} available from index {start_idx}")
+    exit(1)
+
+# Create colormap for hands (BGR format for OpenCV)
 colors = {
     0: [0, 0, 0],        # Background: black
     1: [0, 255, 0],      # Right hand: green
-    2: [255, 0, 0]       # Left hand: red
+    2: [0, 0, 255]       # Left hand: red
 }
 
 for i, (mask_file, frame_file) in enumerate(zip(mask_files, frame_files)):

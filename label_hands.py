@@ -4,15 +4,11 @@ Interactive coordinate picker using matplotlib.
 Click on hands to get coordinates for SAM3 tracking.
 """
 
+import argparse
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 from pathlib import Path
 import json
-
-# Configuration
-FRAMES_DIR = "../frames_preview"
-FRAME_IDX = 0
-OUTPUT_FILE = "hand_coords.json"
 
 # Global state
 right_hand_points = []
@@ -102,6 +98,20 @@ def onkey(event):
 
 def main():
     global img, ax, fig
+    
+    # Parse arguments
+    parser = argparse.ArgumentParser(description='Label hands on a video frame')
+    parser.add_argument('--frame-index', type=int, default=0,
+                        help='Frame index to label (default: 0)')
+    parser.add_argument('--frames-dir', type=str, default='../frames_preview',
+                        help='Directory containing video frames (default: ../frames_preview)')
+    parser.add_argument('--output', type=str, default='hand_coords.json',
+                        help='Output JSON file (default: hand_coords.json)')
+    args = parser.parse_args()
+    
+    FRAMES_DIR = args.frames_dir
+    FRAME_IDX = args.frame_index
+    OUTPUT_FILE = args.output
     
     # Load image - try different naming patterns
     frame_path = Path(FRAMES_DIR) / f"{FRAME_IDX}.jpg"

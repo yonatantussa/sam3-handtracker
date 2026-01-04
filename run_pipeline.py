@@ -59,6 +59,35 @@ def main():
     print("  3. Generate visualizations")
     print()
     
+    # Ask for frame range first
+    print(f"{YELLOW}Frame range to process:{RESET}")
+    print("  Start frame (default: 0)")
+    print("  Max frames (default: 1000)")
+    print()
+
+    start_frame_input = input(f"{YELLOW}Start frame (press Enter for 0): {RESET}").strip()
+    max_frames_input = input(f"{YELLOW}Max frames (press Enter for 1000): {RESET}").strip()
+
+    start_frame = 0  # default
+    max_frames = 1000  # default
+
+    if start_frame_input:
+        try:
+            start_frame = int(start_frame_input)
+        except ValueError:
+            print_error("Invalid number, using default 0")
+            start_frame = 0
+
+    if max_frames_input:
+        try:
+            max_frames = int(max_frames_input)
+        except ValueError:
+            print_error("Invalid number, using default 1000")
+            max_frames = 1000
+
+    print_info(f"Will process frames {start_frame} to {start_frame + max_frames - 1} ({max_frames} total)")
+    print()
+    
     # Check if we should re-label
     coords_file = Path("hand_coords.json")
     skip_labeling = False
@@ -73,6 +102,7 @@ def main():
     # Step 1: Label hands
     if not skip_labeling:
         print_header("STEP 1: Label Hands")
+        print_info(f"You will label frame {start_frame}")
         print_info("Instructions:")
         print("  Click points on the RIGHT hand (shown in green)")
         print("  Press SPACEBAR to switch to LEFT hand")
@@ -82,8 +112,8 @@ def main():
         input(f"{YELLOW}Press Enter to start labeling...{RESET}")
         
         if not run_command(
-            ["python", "label_hands.py"],
-            "Hand labeling"
+            ["python", "label_hands.py", "--frame-index", str(start_frame)],
+            f"Hand labeling (frame {start_frame})"
         ):
             print_error("Labeling failed. Exiting.")
             return 1
@@ -94,32 +124,14 @@ def main():
     
     # Step 2: Track hands
     print_header("STEP 2: Track Hands")
-    print_info("This will track hands through video frames")
+    print_info(f"Processing frames {start_frame} to {start_frame + max_frames - 1} ({max_frames} total)")
+    print()
+
+    tracking_cmd = ["python", "track_hands.py", "--start-frame", str(start_frame), "--max-frames", str(max_frames)]
     
-    # Ask for max frames
-    print()
-    print(f"{YELLOW}How many frames to process?{RESET}")
-    print("  Default: 1000 frames (recommended, ~30-40GB RAM)")
-    print("  Custom: Specify a number")
-    print()
-
-    max_frames_input = input(f"{YELLOW}Max frames (press Enter for 1000): {RESET}").strip()
-
-    max_frames = 1000  # default
-
-    if max_frames_input:
-        try:
-            max_frames = int(max_frames_input)
-        except ValueError:
-            print_error("Invalid number, using default 1000")
-            max_frames = 1000
-
-    print_info(f"Processing {max_frames} frames")
-    print()
-
     if not run_command(
-        ["python", "track_hands.py", "--max-frames", str(max_frames)],
-        f"Hand tracking ({max_frames} frames)"
+        tracking_cmd,
+        f"Hand tracking ({max_frames} frames starting from {start_frame})"
     ):
         print_error("Tracking failed. Exiting.")
         return 1
@@ -138,8 +150,10 @@ def main():
     print_info("Creating colored overlays (green=right hand, red=left hand)")
     print()
     
+    vis_cmd = ["python", "visualize_masks.py", "--start-frame", str(start_frame)]
+    
     if not run_command(
-        ["python", "visualize_masks.py"],
+        vis_cmd,
         "Visualization"
     ):
         print_error("Visualization failed. Exiting.")

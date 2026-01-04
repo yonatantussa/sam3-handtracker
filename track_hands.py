@@ -13,8 +13,12 @@ from samgeo import SamGeo3Video
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser(description='Track hands through video frames using SAM3')
+    parser.add_argument('--start-frame', type=int, default=0,
+                        help='Starting frame index (default: 0)')
     parser.add_argument('--max-frames', type=int, default=1000,
                         help='Maximum number of frames to process (default: 1000)')
+    parser.add_argument('--end-frame', type=int, default=None,
+                        help='Ending frame index (exclusive, overrides --max-frames if set)')
     parser.add_argument('--frames-dir', type=str, default='../frames_preview',
                         help='Directory containing video frames (default: ../frames_preview)')
     parser.add_argument('--coords-file', type=str, default='hand_coords.json',
@@ -29,7 +33,9 @@ def parse_args():
 args = parse_args()
 
 # Configuration
+START_FRAME = args.start_frame
 MAX_FRAMES = args.max_frames
+END_FRAME = args.end_frame
 FRAMES_DIR = args.frames_dir
 TEMP_DIR = args.temp_dir
 OUTPUT_DIR = args.output_dir
@@ -45,7 +51,11 @@ os.makedirs(TEMP_DIR, exist_ok=True)
 print("\n" + "=" * 70)
 print("SAM3 Hand Tracking (Limited)")
 print("=" * 70)
-print(f"Processing first {MAX_FRAMES} frames")
+if END_FRAME is not None:
+    num_frames = END_FRAME - START_FRAME
+    print(f"Processing frames {START_FRAME} to {END_FRAME-1} ({num_frames} frames)")
+else:
+    print(f"Processing {MAX_FRAMES} frames starting from frame {START_FRAME}")
 print(f"Right hand: {len(coords['right'])} points")
 print(f"Left hand: {len(coords['left'])} points")
 print("=" * 70 + "\n")
@@ -76,10 +86,16 @@ if os.path.exists(OUTPUT_DIR):
                 os.remove(os.path.join(OUTPUT_DIR, f))
             print("> Deleted existing masks\n")
 
-# Copy first MAX_FRAMES to temp directory
-all_frames = sorted([f for f in os.listdir(FRAMES_DIR) if f.endswith('.jpg')])[:MAX_FRAMES]
-print(f"Copying {len(all_frames)} frames to temp directory...")
-for frame_file in all_frames:
+# Copy frames to temp directory based on start/end range
+all_frames = sorted([f for f in os.listdir(FRAMES_DIR) if f.endswith('.jpg')])
+
+if END_FRAME is not None:
+    frames_to_process = all_frames[START_FRAME:END_FRAME]
+else:
+    frames_to_process = all_frames[START_FRAME:START_FRAME + MAX_FRAMES]
+
+print(f"Copying {len(frames_to_process)} frames to temp directory...")
+for frame_file in frames_to_process:
     shutil.copy(os.path.join(FRAMES_DIR, frame_file), os.path.join(TEMP_DIR, frame_file))
 print("> Frames copied\n")
 
