@@ -7,7 +7,7 @@ Hand segmentation and tracking for egocentric video using SAM3.
 - Linux with NVIDIA GPU (CUDA 12.6+)
 - Python 3.12+
 - 24GB VRAM (tested on RTX 3090)
-- 46GB RAM (for 1000 frames)
+- ~46GB RAM (for 1000 frames at 1408x1408)
 
 ## Installation
 
@@ -41,38 +41,26 @@ Interactive pipeline that runs: labeling -> tracking -> visualization.
 ```bash
 python label_hands.py
 ```
-- Click points on right hand (green)
-- Press spacebar to switch to left hand (red)
-- Press Enter when done
+
+Two modes available:
+- **Points (recommended)**: Click 4-8 points per hand. Press spacebar to switch hands, Enter to save.
+- **Boxes (experimental)**: Draw bounding boxes (two clicks per hand). Note: produces empty masks.
 
 Saves to `hand_coords.json`.
 
 **2. Track hands**
 ```bash
-python track_hands.py --max-frames 1000
+python track_hands.py --start-frame 0 --max-frames 1000
 ```
 
-Generates binary masks (0=background, 1=right, 2=left) in `output/masks/`.
+Generates binary masks (0=background, 1=right hand, 2=left hand) in `output/masks/`.
 
 **3. Visualize**
 ```bash
-python visualize_masks.py
+python visualize_masks.py --start-frame 0
 ```
 
-Creates colored overlays in `output/visualizations/`.
-
-## Configuration
-
-Edit these variables in scripts:
-
-- `FRAMES_DIR`: Input frames directory (default: `../frames_preview`)
-- `MAX_FRAMES`: Frames to process (default: 1000)
-- `OUTPUT_DIR`: Output directory (default: `output/`)
-
-Or use command-line arguments:
-```bash
-python track_hands.py --max-frames 500 --frames-dir ./frames
-```
+Creates colored overlays (green=right, red=left) in `output/visualizations/`.
 
 ## Notes
 
@@ -80,3 +68,7 @@ python track_hands.py --max-frames 500 --frames-dir ./frames
 - Works best with around 8 points per hand
 - Processing all frames may cause OOM - use batches instead
 - Scripts check for existing output and prompt before overwriting
+- **Point prompts**: ~96% detection rate (recommended)
+- **Box prompts**: Implementation complete but SAM3 produces empty masks. See `BOXES_IMPLEMENTATION.md` for details.
+- Use `--start-frame` and `--max-frames` to process specific ranges
+- Match `--start-frame` in visualize_masks.py to track_hands.py for correct alignment
